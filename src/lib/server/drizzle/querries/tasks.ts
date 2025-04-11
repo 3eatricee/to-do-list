@@ -1,5 +1,6 @@
 import { db } from '$lib/server/drizzle/client';
 import { task } from '$lib/server/drizzle/schema';
+import { eq } from 'drizzle-orm';
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod';
 import type { z } from 'zod';
 
@@ -20,4 +21,8 @@ export async function getAllTasks(listId: string) {
 	});
 
 	return tasks;
+}
+
+export async function deleteTask(id: string) {
+	await db.delete(task).where(eq(task.id, id));
 }

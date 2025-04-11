@@ -2,6 +2,7 @@
 	import { client } from '$lib/trpc/client';
 	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
+	import { DropdownMenu } from 'bits-ui';
 
 	type List = {
 		id: string;
@@ -20,15 +21,8 @@
 
 	let tasks: Task[] = $state([]);
 	let nextTaskTitle = $state('');
-	let description = $state('');
 
-	onMount(async () => {
-		await getAllLists();
-	});
-
-	const getAllLists = async () => {
-		lists = await client.list.getAll.query();
-	};
+	let { data } = $props();
 
 	const createList = async () => {
 		try {
@@ -45,7 +39,7 @@
 	const deleteList = async (id: string) => {
 		try {
 			await client.list.delete.mutate({ id });
-			await getAllLists();
+			lists = lists.filter((list) => list.id !== id);
 		} catch (error) {
 			console.error('Fehler beim Löschen der Liste:', error);
 		}
@@ -74,7 +68,20 @@
 	};
 
 	const getAllTasks = async (listId: string) => {
-		tasks = await client.task.getAll.query({ listId });
+		try {
+			tasks = await client.task.getAll.query({ listId });
+		} catch (error) {
+			console.error('Fehler beim Laden der Tasks:', error);
+		}
+	};
+
+	const deleteTask = async (id: string) => {
+		try {
+			await client.task.delete.mutate({ id });
+			tasks = tasks.filter((task) => task.id !== id);
+		} catch (error) {
+			console.error('Fehler beim Löschen der Task:', error);
+		}
 	};
 </script>
 
@@ -86,7 +93,6 @@
 
 		{#each lists as list}
 			<button
-				type="button"
 				onclick={async () => {
 					selectedList = list;
 					await getAllTasks(selectedList.id);
@@ -94,23 +100,24 @@
 				class="mb-4 flex w-full items-center justify-between rounded-lg p-3 transition-colors duration-300 hover:bg-gray-50"
 			>
 				<span class="text-lg text-gray-700">{list.title}</span>
-				<span
-					role="button"
-					tabindex="0"
-					onclick={(e) => {
-						e.stopPropagation();
-						deleteList(list.id);
-					}}
-					onkeydown={(e) => {
-						if (e.key === 'Enter' || e.key === ' ') {
-							e.stopPropagation();
-							deleteList(list.id);
-						}
-					}}
-					class="transition-colors duration-300 hover:text-red-500"
-				>
-					<Icon icon="mdi-light:delete" width="20" height="20" />
-				</span>
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger class="ml-2 text-gray-500 hover:text-gray-800">
+						<Icon icon="mdi:dots-vertical" width="20" height="20" />
+					</DropdownMenu.Trigger>
+
+					<DropdownMenu.Content class="z-20">
+						<DropdownMenu.Item class="cursor-pointer">
+							<Icon icon="mdi:pencil-outline" class="mr-2" width="18" /> Bearbeiten
+						</DropdownMenu.Item>
+
+						<DropdownMenu.Item
+							onclick={() => deleteList(list.id)}
+							class="cursor-pointer text-red-600 hover:bg-red-50"
+						>
+							<Icon icon="mdi:delete-outline" class="mr-2" width="18" /> Löschen
+						</DropdownMenu.Item>
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
 			</button>
 		{/each}
 
@@ -138,7 +145,17 @@
 			<div>
 				<ul class="mt-6 space-y-2">
 					{#each tasks as task}
-						<li>{task.title}</li>
+						<div class="mb-4 flex w-full items-center justify-between rounded-lg bg-white p-3">
+							<li>{task.title}</li>
+							<button
+								onclick={async () => {
+									await deleteTask(task.id);
+								}}
+								class="transition-colors duration-300 hover:text-red-500"
+							>
+								<Icon icon="mdi-light:delete" width="20" height="20" />
+							</button>
+						</div>
 					{/each}
 				</ul>
 			</div>

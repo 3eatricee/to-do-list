@@ -7,7 +7,7 @@ import {
 	getAllLists,
 	updateList
 } from '../drizzle/querries/list';
-import { createTask, getAllTasks, TasksInsertSchema } from '../drizzle/querries/tasks';
+import { createTask, getAllTasks, deleteTask, TasksInsertSchema } from '../drizzle/querries/tasks';
 import { trpc } from './context';
 
 const listRouter = trpc.router({
@@ -41,6 +41,10 @@ const taskRouter = trpc.router({
 	getAll: trpc.procedure.input(z.object({ listId: z.string() })).query(async (req) => {
 		const { listId } = req.input;
 		return await getAllTasks(listId);
+	}),
+	delete: trpc.procedure.input(z.object({ id: z.string() })).mutation(async (req) => {
+		const { id } = req.input;
+		await deleteTask(id);
 	})
 });
 
