@@ -1,12 +1,12 @@
 <script lang="ts">
+	import { invalidate } from '$app/navigation';
 	import { client } from '$lib/trpc/client';
 	import Icon from '@iconify/svelte';
-	import { onMount } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
 
 	type List = {
 		id: string;
-		title: string | null;
+		title?: string | null;
 	};
 
 	type Task = {
@@ -15,14 +15,16 @@
 		listId: string | null;
 	};
 
+	let { data } = $props();
 	let selectedList: List | null = $state(null);
-	let lists: List[] = $state([]);
+	let lists: List[] = $state(data.list);
 	let nextTitle = $state('');
+
+	let editingListId: string | null = $state(null);
+	let editedTitle = $state('');
 
 	let tasks: Task[] = $state([]);
 	let nextTaskTitle = $state('');
-
-	let { data } = $props();
 
 	const createList = async () => {
 		try {
@@ -30,6 +32,7 @@
 				title: nextTitle
 			});
 			nextTitle = '';
+			await invalidate('list:all');
 			return list;
 		} catch (error) {
 			console.error('Fehler beim Erstellen der Liste:', error);
@@ -45,14 +48,13 @@
 		}
 	};
 
-	// const updateList = async (id: string, title: string) => {
-	// 	try {
-	// 		await client.list.update.mutate({ id, title });
-	// 		await getAllLists();
-	// 	} catch (error) {
-	// 		console.error('Fehler beim Bearbeiten der Liste:', error);
-	// 	}
-	// };
+	const updateList = async ({ id, title }: { id: string; title: string }) => {
+		try {
+			await client.list.update.mutate({ id, title });
+		} catch (error) {
+			console.error('Fehler beim Bearbeiten der Liste:', error);
+		}
+	};
 
 	const createTask = async (listId: string) => {
 		try {
@@ -60,7 +62,7 @@
 				title: nextTaskTitle,
 				listId
 			});
-
+			await getAllTasks(listId);
 			return task;
 		} catch (error) {
 			console.error('Fehler beim Ersstellen der Task:', error);
@@ -86,39 +88,67 @@
 </script>
 
 <div class="bg-soft-gray flex h-screen w-screen">
+	<!--als layout.svelte-->
 	<div
 		class="m-5 flex w-80 flex-shrink-0 flex-col overflow-y-auto rounded-xl bg-white p-6 shadow-lg"
 	>
 		<h2 class="mb-6 text-center text-2xl font-semibold text-gray-800">ToDo Listen</h2>
 
 		{#each lists as list}
-			<button
-				onclick={async () => {
-					selectedList = list;
-					await getAllTasks(selectedList.id);
-				}}
-				class="mb-4 flex w-full items-center justify-between rounded-lg p-3 transition-colors duration-300 hover:bg-gray-50"
-			>
-				<span class="text-lg text-gray-700">{list.title}</span>
-				<DropdownMenu.Root>
-					<DropdownMenu.Trigger class="ml-2 text-gray-500 hover:text-gray-800">
-						<Icon icon="mdi:dots-vertical" width="20" height="20" />
-					</DropdownMenu.Trigger>
-
-					<DropdownMenu.Content class="z-20">
-						<DropdownMenu.Item class="cursor-pointer">
-							<Icon icon="mdi:pencil-outline" class="mr-2" width="18" /> Bearbeiten
-						</DropdownMenu.Item>
-
-						<DropdownMenu.Item
-							onclick={() => deleteList(list.id)}
-							class="cursor-pointer text-red-600 hover:bg-red-50"
+			{#if editingListId === list.id}
+				<input
+					class="w-full rounded px-2 py-1 text-sm"
+					bind:value={editedTitle}
+					onkeydown={async (e) => {
+						if (e.key === 'Enter') {
+							await updateList({ id: list.id, title: editedTitle });
+							lists = lists.map((l) => (l.id === list.id ? { ...l, title: editedTitle } : l));
+							editingListId = null;
+						}
+						if (e.key === 'Escape') {
+							editingListId = null;
+						}
+					}}
+				/>
+			{:else}
+				<button
+					onclick={async () => {
+						selectedList = list;
+						await getAllTasks(selectedList.id);
+					}}
+					class="mb-4 flex w-full items-center justify-between rounded-lg p-3 transition-colors duration-300 hover:bg-gray-50"
+				>
+					<span class="text-lg text-gray-700">{list.title}</span>
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger
+							class="ml-2 rounded text-gray-500 hover:text-gray-800 focus:outline-none"
 						>
-							<Icon icon="mdi:delete-outline" class="mr-2" width="18" /> Löschen
-						</DropdownMenu.Item>
-					</DropdownMenu.Content>
-				</DropdownMenu.Root>
-			</button>
+							<Icon icon="mdi:dots-vertical" width="20" height="20" />
+						</DropdownMenu.Trigger>
+
+						<DropdownMenu.Content
+							class="ring-opacity-5 z-20 mt-2 w-48 rounded-lg bg-white shadow-lg ring-1 ring-black focus:outline-none"
+						>
+							<DropdownMenu.Item
+								onclick={() => {
+									editingListId = list.id;
+									editedTitle = list.title ?? '';
+								}}
+								class="flex cursor-pointer items-center rounded-t-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+							>
+								<Icon icon="mdi:pencil-outline" class="mr-2" width="18" /> Bearbeiten
+							</DropdownMenu.Item>
+
+							<DropdownMenu.Item
+								onclick={() => deleteList(list.id)}
+								class="flex cursor-pointer items-center rounded-b-lg px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-800"
+							>
+								<Icon icon="mdi:delete-outline" class="mr-2" width="18" /> Löschen
+							</DropdownMenu.Item>
+						</DropdownMenu.Content>
+					</DropdownMenu.Root>
+				</button>
+			{/if}
 		{/each}
 
 		<div class="mt-6">
@@ -129,9 +159,6 @@
 				onkeydown={async (e) => {
 					if (e.key !== 'Enter') return;
 					const newList = await createList();
-					if (newList) {
-						lists = [...lists, newList];
-					}
 				}}
 			/>
 		</div>
@@ -169,9 +196,6 @@
 					if (e.key !== 'Enter') return;
 					if (selectedList) {
 						const newTask = await createTask(selectedList.id);
-						if (newTask) {
-							tasks = [...tasks, newTask];
-						}
 						nextTaskTitle = '';
 					}
 				}}

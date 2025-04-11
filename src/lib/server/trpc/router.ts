@@ -25,7 +25,7 @@ const listRouter = trpc.router({
 		.input(
 			z.object({
 				id: z.string(),
-				title: ListUpdateSchema
+				title: z.string()
 			})
 		)
 		.mutation(async (req) => {

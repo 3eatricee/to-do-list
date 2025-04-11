@@ -24,6 +24,6 @@ export async function deleteList(id: string) {
 	await db.delete(list).where(eq(list.id, id));
 }
 
-export async function updateList(id: string, data: UpdateList) {
-	await db.update(list).set({ title: data.title }).where(eq(list.id, id));
+export async function updateList(id: string, title: string) {
+	await db.update(list).set({ title: title }).where(eq(list.id, id));
 }
