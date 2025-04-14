@@ -45,7 +45,18 @@ const taskRouter = trpc.router({
 	delete: trpc.procedure.input(z.object({ id: z.string() })).mutation(async (req) => {
 		const { id } = req.input;
 		await deleteTask(id);
-	})
+	}),
+	update: trpc.procedure
+		.input(
+			z.object({
+				id: z.string(),
+				title: z.string()
+			})
+		)
+		.mutation(async (req) => {
+			const { id, title } = req.input;
+			return updateList(id, title);
+		})
 });
 
 export const router = trpc.router({

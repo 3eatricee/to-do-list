@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidate } from '$app/navigation';
+	import { invalidate, invalidateAll } from '$app/navigation';
 	import { client } from '$lib/trpc/client';
 	import Icon from '@iconify/svelte';
 	import { DropdownMenu } from 'bits-ui';
@@ -20,8 +20,8 @@
 	let lists: List[] = $state(data.list);
 	let nextTitle = $state('');
 
-	let editingListId: string | null = $state(null);
-	let editedTitle = $state('');
+	let editedListTitle = $state('');
+	let editingListId: string | null = $state('');
 
 	let tasks: Task[] = $state([]);
 	let nextTaskTitle = $state('');
@@ -32,7 +32,7 @@
 				title: nextTitle
 			});
 			nextTitle = '';
-			await invalidate('list:all');
+			await invalidateAll();
 			return list;
 		} catch (error) {
 			console.error('Fehler beim Erstellen der Liste:', error);
@@ -98,11 +98,11 @@
 			{#if editingListId === list.id}
 				<input
 					class="w-full rounded px-2 py-1 text-sm"
-					bind:value={editedTitle}
+					bind:value={editedListTitle}
 					onkeydown={async (e) => {
 						if (e.key === 'Enter') {
-							await updateList({ id: list.id, title: editedTitle });
-							lists = lists.map((l) => (l.id === list.id ? { ...l, title: editedTitle } : l));
+							await updateList({ id: list.id, title: editedListTitle });
+							lists = lists.map((l) => (l.id === list.id ? { ...l, title: editedListTitle } : l));
 							editingListId = null;
 						}
 						if (e.key === 'Escape') {
@@ -132,7 +132,7 @@
 							<DropdownMenu.Item
 								onclick={() => {
 									editingListId = list.id;
-									editedTitle = list.title ?? '';
+									editedListTitle = list.title ?? '';
 								}}
 								class="flex cursor-pointer items-center rounded-t-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
 							>
@@ -158,7 +158,7 @@
 				bind:value={nextTitle}
 				onkeydown={async (e) => {
 					if (e.key !== 'Enter') return;
-					const newList = await createList();
+					await createList();
 				}}
 			/>
 		</div>
@@ -195,7 +195,7 @@
 				onkeydown={async (e) => {
 					if (e.key !== 'Enter') return;
 					if (selectedList) {
-						const newTask = await createTask(selectedList.id);
+						await createTask(selectedList.id);
 						nextTaskTitle = '';
 					}
 				}}

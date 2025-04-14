@@ -26,3 +26,7 @@ export async function getAllTasks(listId: string) {
 export async function deleteTask(id: string) {
 	await db.delete(task).where(eq(task.id, id));
 }
+
+export async function updateTask(id: string, title: string) {
+	await db.update(task).set({ title: title }).where(eq(task.id, id));
+}
