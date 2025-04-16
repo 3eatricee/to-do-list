@@ -7,8 +7,16 @@ import {
 	getAllLists,
 	updateList
 } from '../drizzle/querries/list';
-import { createTask, getAllTasks, deleteTask, TasksInsertSchema } from '../drizzle/querries/tasks';
+import {
+	createTask,
+	getAllTasks,
+	deleteTask,
+	TasksInsertSchema,
+	TaskUpdateSchema,
+	updateTask
+} from '../drizzle/querries/tasks';
 import { trpc } from './context';
+import { check } from 'drizzle-orm/gel-core';
 
 const listRouter = trpc.router({
 	create: trpc.procedure.input(ListInsertSchema).mutation(async (req) => {
@@ -50,12 +58,12 @@ const taskRouter = trpc.router({
 		.input(
 			z.object({
 				id: z.string(),
-				title: z.string()
+				updatedTask: TaskUpdateSchema
 			})
 		)
 		.mutation(async (req) => {
-			const { id, title } = req.input;
-			return updateList(id, title);
+			const { id, updatedTask } = req.input;
+			return await updateTask(id, updatedTask);
 		})
 });
 

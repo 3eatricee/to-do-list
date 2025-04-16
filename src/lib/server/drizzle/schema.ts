@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, uuid, text } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, timestamp } from 'drizzle-orm/pg-core';
 
 export const list = pgTable('list', {
 	id: uuid('id').primaryKey().defaultRandom(),
@@ -9,7 +9,8 @@ export const list = pgTable('list', {
 export const task = pgTable('task', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	title: text('title'),
-	listId: uuid('list_id').references(() => list.id)
+	listId: uuid('list_id').references(() => list.id),
+	checked: boolean('checked').default(false),
 });
 
 export const listRelations = relations(list, ({ many }) => ({
