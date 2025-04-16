@@ -3,6 +3,8 @@
 	import { client } from '$lib/trpc/client';
 	import Icon from '@iconify/svelte';
 	import { DropdownMenu } from 'bits-ui';
+	import { selectedList } from '$lib/stores/lists';
+	import { get } from 'svelte/store';
 
 	type List = {
 		id: string;
@@ -15,8 +17,16 @@
 		listId: string | null;
 	};
 
+	$effect(() => {
+		if ($selectedList) {
+			(async () => {
+				await getAllTasks($selectedList.id);
+			})();
+		}
+	});
+
 	let { data } = $props();
-	let selectedList: List | null = $state(null);
+	// let selectedList: List | null = $state(null);
 	let lists: List[] = $state(data.list);
 	let nextTitle = $state('');
 
@@ -26,35 +36,35 @@
 	let tasks: Task[] = $state([]);
 	let nextTaskTitle = $state('');
 
-	const createList = async () => {
-		try {
-			const list = await client.list.create.mutate({
-				title: nextTitle
-			});
-			nextTitle = '';
-			await invalidateAll();
-			return list;
-		} catch (error) {
-			console.error('Fehler beim Erstellen der Liste:', error);
-		}
-	};
+	// const createList = async () => {
+	// 	try {
+	// 		const list = await client.list.create.mutate({
+	// 			title: nextTitle
+	// 		});
+	// 		nextTitle = '';
+	// 		await invalidateAll();
+	// 		return list;
+	// 	} catch (error) {
+	// 		console.error('Fehler beim Erstellen der Liste:', error);
+	// 	}
+	// };
 
-	const deleteList = async (id: string) => {
-		try {
-			await client.list.delete.mutate({ id });
-			lists = lists.filter((list) => list.id !== id);
-		} catch (error) {
-			console.error('Fehler beim Löschen der Liste:', error);
-		}
-	};
+	// const deleteList = async (id: string) => {
+	// 	try {
+	// 		await client.list.delete.mutate({ id });
+	// 		lists = lists.filter((list) => list.id !== id);
+	// 	} catch (error) {
+	// 		console.error('Fehler beim Löschen der Liste:', error);
+	// 	}
+	// };
 
-	const updateList = async ({ id, title }: { id: string; title: string }) => {
-		try {
-			await client.list.update.mutate({ id, title });
-		} catch (error) {
-			console.error('Fehler beim Bearbeiten der Liste:', error);
-		}
-	};
+	// const updateList = async ({ id, title }: { id: string; title: string }) => {
+	// 	try {
+	// 		await client.list.update.mutate({ id, title });
+	// 	} catch (error) {
+	// 		console.error('Fehler beim Bearbeiten der Liste:', error);
+	// 	}
+	// };
 
 	const createTask = async (listId: string) => {
 		try {
@@ -87,9 +97,9 @@
 	};
 </script>
 
-<div class="bg-soft-gray flex h-screen w-screen">
+<div>
 	<!--als layout.svelte-->
-	<div
+	<!-- <div
 		class="m-5 flex w-80 flex-shrink-0 flex-col overflow-y-auto rounded-xl bg-white p-6 shadow-lg"
 	>
 		<h2 class="mb-6 text-center text-2xl font-semibold text-gray-800">ToDo Listen</h2>
@@ -162,12 +172,12 @@
 				}}
 			/>
 		</div>
-	</div>
+	</div> -->
 
 	<div class="m-5 flex flex-1 flex-col overflow-y-auto p-6">
 		{#if selectedList}
 			<h3 class="mb-4 text-xl font-semibold text-gray-800">
-				Aufgaben in: <span>{selectedList.title}</span>
+				Aufgaben in: <span>{$selectedList?.title}</span>
 			</h3>
 			<div>
 				<ul class="mt-6 space-y-2">
@@ -194,9 +204,10 @@
 				bind:value={nextTaskTitle}
 				onkeydown={async (e) => {
 					if (e.key !== 'Enter') return;
-					if (selectedList) {
-						await createTask(selectedList.id);
-						nextTaskTitle = '';
+					const list = get(selectedList);
+					if (list) {
+						await createTask(list.id);
+						nextTitle = '';
 					}
 				}}
 			/>

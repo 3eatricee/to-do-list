@@ -2,8 +2,9 @@
 	import Icon from '@iconify/svelte';
 	import { DropdownMenu } from 'bits-ui';
 	import '../app.css';
-	import { invalidate, invalidateAll } from '$app/navigation';
+	import { goto, invalidate, invalidateAll } from '$app/navigation';
 	import { client } from '$lib/trpc/client';
+	import { selectedList } from '$lib/stores/lists';
 
 	type List = {
 		id: string;
@@ -13,7 +14,8 @@
 	let { data, children } = $props();
 
 	let lists: List[] = $state(data.list);
-	let selectedList: List | null = $state(null);
+	// let selectedList: List | null = $state(null);
+
 	let nextTitle = $state('');
 
 	let editedListTitle = $state('');
@@ -72,7 +74,7 @@
 		{:else}
 			<button
 				onclick={async () => {
-					selectedList = list;
+					selectedList.set(list);
 					// await getAllTasks(selectedList.id);
 				}}
 				class="mb-4 flex w-full items-center justify-between rounded-lg p-3 transition-colors duration-300 hover:bg-gray-50"
