@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
+
 	import { client } from '$lib/trpc/client';
 	import Icon from '@iconify/svelte';
 
@@ -29,6 +30,21 @@
 			console.error('Fehler beim Löschen der Task:', error);
 		}
 	};
+
+	const updateTask = async (task: {
+		id: string;
+		updatedTask: { title?: string; checked?: boolean; dueDate?: string | null };
+	}) => {
+		try {
+			await client.task.update.mutate({
+				id: task.id,
+				updatedTask: task.updatedTask
+			});
+			await invalidateAll();
+		} catch (error) {
+			console.error('Fehler beim Bearbeiten der Task', error);
+		}
+	};
 </script>
 
 <div class="m-5 flex flex-1 flex-col overflow-y-auto p-6">
@@ -42,7 +58,27 @@
 				<li
 					class="group animate-fade-in-up flex items-center justify-between rounded-lg bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md"
 				>
-					<span class="text-gray-800">{task.title}</span>
+					<span class={`text-gray-800 ${task.checked ? 'text-gray-400 line-through' : ''}`}>
+						{task.title}
+					</span>
+					<label class="inline-flex cursor-pointer items-center">
+						<input
+							type="checkbox"
+							bind:checked={task.checked}
+							onchange={async (event) => {
+								const updatedChecked = (event.target as HTMLInputElement).checked;
+								await updateTask({
+									id: task.id,
+									updatedTask: {
+										title: task.title ?? '',
+										checked: updatedChecked
+									}
+								});
+							}}
+							class="form-checkbox h-5 w-5 rounded-lg border-gray-300 text-indigo-500 focus:ring-indigo-400"
+						/>
+					</label>
+
 					<button
 						onclick={async () => await deleteTask(task.id)}
 						class="text-red-500 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:text-red-700"

@@ -7,7 +7,7 @@ import type { z } from 'zod';
 export const TasksInsertSchema = createInsertSchema(task);
 export type CreateTask = z.infer<typeof TasksInsertSchema>;
 export const TaskUpdateSchema = createUpdateSchema(task);
-export type UpgradeTask = z.infer<typeof TaskUpdateSchema>;
+export type UpdateTask = Omit<z.infer<typeof TaskUpdateSchema>, 'id'>;
 
 export async function createTask(data: CreateTask) {
 	const [newTask] = await db.insert(task).values(data).returning();
@@ -27,6 +27,6 @@ export async function deleteTask(id: string) {
 	await db.delete(task).where(eq(task.id, id));
 }
 
-export async function updateTask(id: string, title: string) {
-	await db.update(task).set({ title: title }).where(eq(task.id, id));
+export async function updateTask(id: string, updatedTask: UpdateTask) {
+	await db.update(task).set(updatedTask).where(eq(task.id, id));
 }
