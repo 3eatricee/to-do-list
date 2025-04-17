@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import {
 	ListInsertSchema,
-	ListUpdateSchema,
 	createList,
 	deleteList,
 	getAllLists,
@@ -16,7 +15,6 @@ import {
 	updateTask
 } from '../drizzle/querries/tasks';
 import { trpc } from './context';
-import { check } from 'drizzle-orm/gel-core';
 
 const listRouter = trpc.router({
 	create: trpc.procedure.input(ListInsertSchema).mutation(async (req) => {
@@ -27,7 +25,7 @@ const listRouter = trpc.router({
 	}),
 	delete: trpc.procedure.input(z.object({ id: z.string() })).mutation(async (req) => {
 		const { id } = req.input;
-		return deleteList(id);
+		return await deleteList(id);
 	}),
 	update: trpc.procedure
 		.input(
@@ -38,7 +36,7 @@ const listRouter = trpc.router({
 		)
 		.mutation(async (req) => {
 			const { id, title } = req.input;
-			return updateList(id, title);
+			return await updateList(id, title);
 		})
 });
 

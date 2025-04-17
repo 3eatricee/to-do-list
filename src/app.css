@@ -4,6 +4,10 @@
 
 @theme {
 	--color-soft-gray: #f6f5f4;
+	--color-lavender: #d1b1cb;
+	--color-soft-lavender: #f0e5ee;
+	--color-magnolia: #f8f2f7;
+	--color-dark-lavender: #BF88B6
 }
 
 @keyframes fade-in {
